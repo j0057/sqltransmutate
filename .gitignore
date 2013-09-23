@@ -1,0 +1,6 @@
+env
+*.pyc
+Makefile.inc
+requirements.txt
+*.swp
+
