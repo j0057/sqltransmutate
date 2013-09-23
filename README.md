@@ -32,10 +32,17 @@ It's not perfect, but it works for me. This thing:
   for many-to-many relations. I had those defined with a unique index over the two foreign keys
   and had to change those to be a primary key instead. Not a really big deal to me, but YMMV.
 * Is not complete for many dialect-specific data types. This won't be a good way to move the data
-  if SQLAlchemy doesn't have a generic data type for it. That said, any pull requests are welcome!
-* It's not very careful with mapping MySQL's TINYTEXT and MEDIUMTEXT things.
+  if SQLAlchemy doesn't have a generic data type for it. (I think The Eagles have a song about this
+  one.) That said, any pull requests are welcome!
+* Is not very careful with mapping MySQL's TINYTEXT and MEDIUMTEXT things.
 
 So yeah, circular dependencies. Who does that anyway??
+
+To do
+-----
+
+Clean it up. There's just one function in there. It crashes when sys.argv is empty. In my defense,
+it's the result of one evening of furious hacking, and I had about 4 hours of sleep last night.
 
 How to run it
 -------------
@@ -45,7 +52,7 @@ How to run it
 2. Then copy Makefile.inc.dist to Makefile.inc. Edit it to add the connection strings to the
    source and target database. If there's anything special that needs to happen before the fun can
    start, add the required commands to drop-database and create-database. Careful with those tabs!
-3. Type 'make'. Grab a coffee.
+3. Type 'make'. Grab coffee.
 
 That was fun, wasn't it?
 
@@ -56,8 +63,4 @@ It's missing entries in the mappings dictionary defined somewhere in the beginni
 Right now it only contains what I need it to contain.
 
 You'll probably have to extend it to make it work on your database, but if you do, I'll merge it.
-
-
-  
-
 

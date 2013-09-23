@@ -1,4 +1,4 @@
-SOURCE = mysql://user:password@host/sourcedatabase
+SOURCE = mysql://user:password@host/sourcedatabase?charset=utf8
 TARGET = postgresql://@/targetdatabase
 
 drop-database:

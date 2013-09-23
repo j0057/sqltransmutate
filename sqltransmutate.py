@@ -26,13 +26,16 @@ mappings = {
 }
 
 logger.info('Connecting to %s', SOURCE)
-
 engine1 = sqlalchemy.create_engine(SOURCE)
 Session1 = sqlalchemy.orm.sessionmaker(bind=engine1)
 session1 = Session1()
 
-logger.info('Introspecting')
+logger.info('Connecting to %s', TARGET)
+engine2 = sqlalchemy.create_engine(TARGET)
+Session2 = sqlalchemy.orm.sessionmaker(bind=engine2)
+session2 = Session2()
 
+logger.info('Introspecting')
 metadata = sqlalchemy.MetaData()
 metadata.reflect(bind=engine1)
 
@@ -52,8 +55,6 @@ for table in tables:
     logger.info('  Table %r --', table.name)
     for col in table.columns:
         logger.info('    %r', col)
-
-tables = metadata.tables.values()
 
 logger.info('Mapping entities --')
 entities = { table.name: type(str(table.name) + '_entity', (object,), {'__table__': table})
@@ -87,11 +88,6 @@ logger.info('Dependencies --')
 for table in tables:
     logger.info('  Table %r: %r', table.name, get_dependencies(table))
 
-
-logger.info('Connecting to %s', TARGET)
-engine2 = sqlalchemy.create_engine(TARGET)
-Session2 = sqlalchemy.orm.sessionmaker(bind=engine2)
-session2 = Session2()
 
 logger.info('Creating tables and the rest')
 metadata.create_all(engine2)
@@ -130,6 +126,7 @@ logger.info('New counts: %r', { table.name: session2.query(table).count()
 if TARGET.startswith('postgresql://'):
     for table in tables:
         primary_keys = [ col for col in table.columns if col.primary_key ]
+        logger.info('Resetting PostgreSQL sequence for table %s', table.name)
         if len(primary_keys) != 1:
             continue
         sql = """
