@@ -2,9 +2,10 @@ import logging
 import sys
 
 import sqlalchemy
-import sqlalchemy.orm
+import sqlalchemy.ext.declarative
 import sqlalchemy.dialects.mysql
 import sqlalchemy.dialects.postgresql
+import sqlalchemy.orm
 
 mappings = {
     sqlalchemy.String: [ 
@@ -17,7 +18,7 @@ mappings = {
 }
 
 logging.basicConfig()
-logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
+logging.getLogger('sqlalchemy.engine').setLevel(logging.WARNING)
 logger = logging.getLogger('sqltransmutate')
 logger.setLevel(logging.INFO)
 
@@ -45,11 +46,18 @@ for table in tables:
 
 logger.info('Metadata --')
 for table in tables:
-    logger.info('  Table %r:', table.name)
+    logger.info('  Table %r --', table.name)
     for col in table.columns:
         logger.info('    %r', col)
 
 tables = metadata.tables.values()
+
+logger.info('Mapping entities --')
+entities = { table.name: type(str(table.name), (object,), {'__table__': table})
+             for table in tables }
+for entity in entities.values():
+    logger.info('  Mapping entity %r to table %r', entity, entity.__table__.name)
+    sqlalchemy.orm.mapper(entity, entity.__table__)
 
 def get_dependencies(table):
     return { foreign_key.target_fullname.split('.')[0]
@@ -87,15 +95,18 @@ if 1:
     metadata.create_all(engine2)
 
 
+logger.info('Counts: %r', { table.name: session1.query(table).count()
+                            for table in tables })
+
 logger.info('Slurping data')
 #records = { table.name: session1.query(table).all()
 #            for table in tables }
 #print records
 
 for table in tables:
-    print table, type(table)
-    for record in session1.query(table):
-        print record, type(record)
+    logger.info('%s %r', table, type(table))
+    for record in session1.query(entities[table.name]):
+        logger.info('%s %r', record, type(record))
         session2.add(record)
         break
     break
