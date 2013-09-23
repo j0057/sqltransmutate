@@ -7,6 +7,14 @@ import sqlalchemy.dialects.mysql
 import sqlalchemy.dialects.postgresql
 import sqlalchemy.orm
 
+logging.basicConfig()
+logging.getLogger('sqlalchemy.engine').setLevel(logging.WARN)
+logger = logging.getLogger('sqltransmutate')
+logger.setLevel(logging.INFO)
+
+SOURCE = sys.argv[1]
+TARGET = sys.argv[2]
+
 mappings = {
     sqlalchemy.String: [ 
         sqlalchemy.dialects.mysql.MEDIUMTEXT,
@@ -17,14 +25,9 @@ mappings = {
     ]
 }
 
-logging.basicConfig()
-logging.getLogger('sqlalchemy.engine').setLevel(logging.WARN)
-logger = logging.getLogger('sqltransmutate')
-logger.setLevel(logging.INFO)
+logger.info('Connecting to %s', SOURCE)
 
-logger.info('Connecting to %s', sys.argv[1])
-
-engine1 = sqlalchemy.create_engine(sys.argv[1])
+engine1 = sqlalchemy.create_engine(SOURCE)
 Session1 = sqlalchemy.orm.sessionmaker(bind=engine1)
 session1 = Session1()
 
@@ -85,15 +88,13 @@ for table in tables:
     logger.info('  Table %r: %r', table.name, get_dependencies(table))
 
 
-if 1:
-    logger.info('Connecting to %s', sys.argv[2])
-    engine2 = sqlalchemy.create_engine(sys.argv[2])
-    Session2 = sqlalchemy.orm.sessionmaker(bind=engine2)
-    session2 = Session2()
+logger.info('Connecting to %s', TARGET)
+engine2 = sqlalchemy.create_engine(TARGET)
+Session2 = sqlalchemy.orm.sessionmaker(bind=engine2)
+session2 = Session2()
 
-    logger.info('Creating tables and the rest')
-    metadata.create_all(engine2)
-
+logger.info('Creating tables and the rest')
+metadata.create_all(engine2)
 
 logger.info('Old counts: %r', { table.name: session1.query(table).count()
                                 for table in tables })
@@ -126,3 +127,12 @@ for table in tables:
 logger.info('New counts: %r', { table.name: session2.query(table).count()
                                 for table in tables })
 
+if TARGET.startswith('postgresql://'):
+    for table in tables:
+        primary_keys = [ col for col in table.columns if col.primary_key ]
+        if len(primary_keys) != 1:
+            continue
+        sql = """
+            SELECT pg_catalog.setval(pg_get_serial_sequence('{0}', '{1}'), 
+            (SELECT MAX("{1}") FROM {0}))""".format(table.name, primary_keys[0].name)
+        engine2.execute(sql)

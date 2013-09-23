@@ -7,6 +7,9 @@ with another engine, then copies over all the data.
 It has no knowledge whatsoever of which databases it's moving from and to. Whatever SQLAlchemy
 can handle, this script can handle.
 
+Scratch that -- it has to do some post-processing to reset the sequence counters for PostgreSQL.
+Oh well.
+
 Why??
 -----
 
