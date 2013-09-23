@@ -3,6 +3,9 @@ QUIET = --quiet
 run: env/.requirements drop-database create-database
 	env/bin/python sqltransmutate.py $(SOURCE) $(TARGET)
 
+debug: env/.requirements drop-database create-database
+	env/bin/python -i sqltransmutate.py $(SOURCE) $(TARGET)
+
 env:
 	virtualenv env $(QUIET)
 
