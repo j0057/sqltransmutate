@@ -18,7 +18,7 @@ mappings = {
 }
 
 logging.basicConfig()
-logging.getLogger('sqlalchemy.engine').setLevel(logging.WARNING)
+logging.getLogger('sqlalchemy.engine').setLevel(logging.WARN)
 logger = logging.getLogger('sqltransmutate')
 logger.setLevel(logging.INFO)
 
@@ -53,7 +53,7 @@ for table in tables:
 tables = metadata.tables.values()
 
 logger.info('Mapping entities --')
-entities = { table.name: type(str(table.name), (object,), {'__table__': table})
+entities = { table.name: type(str(table.name) + '_entity', (object,), {'__table__': table})
              for table in tables }
 for entity in entities.values():
     logger.info('  Mapping entity %r to table %r', entity, entity.__table__.name)
@@ -95,21 +95,34 @@ if 1:
     metadata.create_all(engine2)
 
 
-logger.info('Counts: %r', { table.name: session1.query(table).count()
-                            for table in tables })
-
-logger.info('Slurping data')
-#records = { table.name: session1.query(table).all()
-#            for table in tables }
-#print records
+logger.info('Old counts: %r', { table.name: session1.query(table).count()
+                                for table in tables })
 
 for table in tables:
-    logger.info('%s %r', table, type(table))
-    for record in session1.query(entities[table.name]):
-        logger.info('%s %r', record, type(record))
-        session2.add(record)
-        break
-    break
-    session2.commit()
+    later = []
+    logger.info('Copying items from table %s', table)
+    for item in session1.query(entities[table.name]):
+        new_item = entities[table.name]()
+        for col in table.columns:
+            value = getattr(item, col.name)
+            setattr(new_item, col.name, value)
+        try:
+            session2.add(new_item)
+            session2.commit()
+        except sqlalchemy.exc.IntegrityError:
+            session2.rollback()
+            later.append(new_item)
+    if later:
+        logger.info('Retrying %d items', len(later))
+    while later:
+        new_item = later.pop(0)
+        try:
+            session2.add(new_item)
+            session2.commit()
+        except sqlalchemy.exc.IntegrityError:
+            session2.rollback()
+            later.append(new_item)
 
+logger.info('New counts: %r', { table.name: session2.query(table).count()
+                                for table in tables })
 
