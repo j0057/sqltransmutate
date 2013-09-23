@@ -1,2 +1,8 @@
-SOURCE = mysql://...
-TARGET = postgresql://...
+SOURCE = mysql://user:password@host/sourcedatabase
+TARGET = postgresql://@/targetdatabase
+
+drop-database:
+	#-dropdb targetdatabase
+
+create-database:
+	#createdb targetdatabase
