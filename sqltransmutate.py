@@ -25,6 +25,7 @@ logger.info('Connecting to %s', sys.argv[1])
 
 engine1 = sqlalchemy.create_engine(sys.argv[1])
 Session1 = sqlalchemy.orm.sessionmaker(bind=engine1)
+session1 = Session1()
 
 logger.info('Introspecting')
 
@@ -75,10 +76,29 @@ logger.info('Dependencies --')
 for table in tables:
     logger.info('  Table %r: %r', table.name, get_dependencies(table))
 
-logger.info('Connecting to %s', sys.argv[2])
-engine2= sqlalchemy.create_engine(sys.argv[2])
-Session2 = sqlalchemy.orm.sessionmaker(bind=engine2)
 
-logger.info('Creating tables and the rest')
-metadata.create_all(engine2)
+if 1:
+    logger.info('Connecting to %s', sys.argv[2])
+    engine2 = sqlalchemy.create_engine(sys.argv[2])
+    Session2 = sqlalchemy.orm.sessionmaker(bind=engine2)
+    session2 = Session2()
+
+    logger.info('Creating tables and the rest')
+    metadata.create_all(engine2)
+
+
+logger.info('Slurping data')
+#records = { table.name: session1.query(table).all()
+#            for table in tables }
+#print records
+
+for table in tables:
+    print table, type(table)
+    for record in session1.query(table):
+        print record, type(record)
+        session2.add(record)
+        break
+    break
+    session2.commit()
+
 
