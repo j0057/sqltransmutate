@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import logging
 import sys
 
@@ -85,7 +87,6 @@ def reorder_tables(tables):
             if j > i:
                 logger.info('Switch %s and %s', tables[i].name, dependency)
                 tables[j], tables[i] = tables[i], tables[j]
-                i = 0
                 break
         else:
             i += 1
@@ -107,37 +108,48 @@ def cloner(objtype):
         return result
     return clone
 
-#def index_by_key(entity_class, items, key):
-#    primary_key = [ col for col in entity_class.__table__.columns if col.primary_key ]
-#    get_key = lambda obj: getattr(obj, primary_key.name)
-#    for (i, item) in enumerate(items):
-#        if get_key(item) == key:
-#            return i
-#    return -1
+def index_by_key(items, key_name, key_value):
+    for (i, item) in enumerate(items):
+        if getattr(item, key_name) == key_value:
+            return i
+    return -1
 
-def copy_items_1(session1, session2, tables, entities):
+def reorder_items(table, items):
+    foreign_keys = [ col for col in table.columns if col.foreign_keys ]
+    logger.debug('Foreign keys: %r', foreign_keys)
+    recursive_keys = [ (col.name, fk.target_fullname.split('.')[-1])
+                       for col in foreign_keys
+                       for fk in col.foreign_keys
+                       if fk.target_fullname.split('.')[-2] == table.name ]
+    logger.debug('Recursive keys: %r', recursive_keys)
+    i = 0
+    for (source_name, target_name) in recursive_keys:
+        while i < len(items):
+            source_value = getattr(items[i], source_name)
+            if source_value is None:
+                i += 1
+            else:
+                j = index_by_key(items, target_name, source_value)
+                if j > i:
+                    logger.debug('Switching items --')
+                    logger.debug('  #%r %r', i, items[i])
+                    logger.debug('  #%r %r', j, items[j])
+                    items[i], items[j] = items[j], items[i]
+                else:
+                    i += 1
+    return items
+
+def copy_items(session1, session2, tables, entities):
     for table in tables:
-        later = []
         logger.info('Copying items from table %s', table)
+        items = session1.query(entities[table.name])
+        if table.name in get_dependencies(table):
+            items = reorder_items(table, list(items))
         clone = cloner(entities[table.name])
-        for item in session1.query(entities[table.name]):
+        for item in items:
             new_item = clone(item)
-            try:
-                session2.add(new_item)
-                session2.commit()
-            except sqlalchemy.exc.IntegrityError:
-                session2.rollback()
-                later.append(new_item)
-        if later:
-            logger.info('Retrying %d items', len(later))
-        while later:
-            new_item = later.pop(0)
-            try:
-                session2.add(new_item)
-                session2.commit()
-            except sqlalchemy.exc.IntegrityError:
-                session2.rollback()
-                later.append(new_item)
+            session2.add(new_item)
+        session2.commit()
 
 def fixup_target_database(url, engine, tables):
     if url.startswith('postgresql://'):
@@ -174,7 +186,7 @@ if __name__ == '__main__':
     create_tables(engine2, metadata)
 
     log_counts(session1, tables)
-    copy_items_1(session1, session2, tables, entities)
+    copy_items(session1, session2, tables, entities)
     log_counts(session2, tables)
 
     fixup_target_database(TARGET, engine2, tables)
