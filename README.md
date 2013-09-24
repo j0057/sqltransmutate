@@ -26,8 +26,6 @@ It's not perfect, but it works for me. This thing:
   something you'd want to do every day.
 * Does not handle circular dependencies between tables (infinite loop will result).
 * Does not handle circular dependencies within tables (infinite loop will result).
-  Also, the way it resolves the circular dependencies inside tables could be called 'nuclear option'.
-  (Basically judicious use of ROLLBACK.)
 * Needs a primary key on every table. SQLAlchemy demands it. In my case, I have association tables 
   for many-to-many relations. I had those defined with a unique index over the two foreign keys
   and had to change those to be a primary key instead. Not a really big deal to me, but YMMV.
@@ -37,11 +35,6 @@ It's not perfect, but it works for me. This thing:
 * Is not very careful with mapping MySQL's TINYTEXT and MEDIUMTEXT things.
 
 So yeah, circular dependencies. Who does that anyway??
-
-To do
------
-
-Improve the algorithm for resolving dependencies in self-referencing tables.
 
 How to run it
 -------------
