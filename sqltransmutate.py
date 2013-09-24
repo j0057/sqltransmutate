@@ -32,7 +32,7 @@ def connect(url):
 def introspect_database(engine):
     logger.info('Introspecting')
     metadata = sqlalchemy.MetaData()
-    metadata.reflect(bind=engine1)
+    metadata.reflect(bind=engine)
     return metadata
 
 def replace_dialect_types(tables):
