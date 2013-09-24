@@ -41,8 +41,7 @@ So yeah, circular dependencies. Who does that anyway??
 To do
 -----
 
-Clean it up. There's just one function in there. It crashes when sys.argv is empty. In my defense,
-it's the result of one evening of furious hacking, and I had about 4 hours of sleep last night.
+Improve the algorithm for resolving dependencies in self-referencing tables.
 
 How to run it
 -------------
