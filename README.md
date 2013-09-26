@@ -48,7 +48,7 @@ That was fun, wasn't it?
 Did I mention pull requests are welcome?
 ----------------------------------------
 
-It's missing entries in the mappings dictionary defined somewhere in the beginning of the code.
+It's missing entries in the `mappings` dictionary defined somewhere in the beginning of the code.
 Right now it only contains what I need it to contain.
 
 You'll probably have to extend it to make it work on your database, but if you do, I'll merge it.
