@@ -122,8 +122,8 @@ def reorder_items(table, items):
                        for fk in col.foreign_keys
                        if fk.target_fullname.split('.')[-2] == table.name ]
     logger.debug('Recursive keys: %r', recursive_keys)
-    i = 0
     for (source_name, target_name) in recursive_keys:
+        i = 0
         while i < len(items):
             source_value = getattr(items[i], source_name)
             if source_value is None:
